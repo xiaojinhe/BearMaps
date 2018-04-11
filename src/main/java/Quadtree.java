@@ -4,11 +4,6 @@ public class Quadtree {
     Node root;
     final String imgAddr;
 
-    /*public Quadtree(Node x, int maxDepth, String imgAddr) {
-        this.imgAddr = imgAddr;
-        this.root = buildQuadtree(x, 0, maxDepth);
-    }*/
-
     public Quadtree(double ullon, double ullat, double lrlon, double lrlat, int maxDepth, String imgAddr) {
         this.imgAddr = imgAddr;
         this.root = new Node(0, ullon, ullat, lrlon, lrlat, imgAddr, 0);
@@ -47,32 +42,6 @@ public class Quadtree {
 
         return x;
     }
-
-    /*private Node buildQuadtree(Node x, int depth, int maxDepth) {
-        if (depth == maxDepth) {
-            return x;
-        }
-
-        double midLon = (x.ullon + x.lrlon) / 2;
-        double midLat = (x.ullat + x.lrlat) / 2;
-        // add northwestern child
-        Node nwNode = new Node(x.index * 10 + 1, x.ullon, x.ullat, midLon, midLat, this.imgAddr,depth + 1);
-        x.nw = buildQuadtree(nwNode, depth + 1, maxDepth);
-
-        // add northeastern child
-        Node neNode = new Node(x.index * 10 + 2, midLon, x.ullat, x.lrlon, midLat, this.imgAddr,depth + 1);
-        x.ne = buildQuadtree(neNode, depth + 1, maxDepth);
-
-        // add southwestern child
-        Node swNode = new Node(x.index * 10 + 3, x.ullon, midLat, midLon, x.lrlat, this.imgAddr,depth + 1);
-        x.sw = buildQuadtree(swNode, depth + 1, maxDepth);
-
-        // add southeastern child
-        Node seNode = new Node(x.index * 10 + 4, midLon, midLat, x.lrlon, x.lrlat, this.imgAddr,depth + 1);
-        x.se = buildQuadtree(seNode, depth + 1, maxDepth);
-
-        return x;
-    }*/
 
     public boolean intersectWithNode(double ullon, double ullat, double lrlon, double lrlat, Node x) {
         return !((ullon > x.lrlon) || (ullat < x.lrlat) || (lrlon < x.ullon) || (lrlat > x.ullat));
