@@ -1,23 +1,23 @@
 import java.util.*;
 
 public class Quadtree {
-    Node root;
+    Tile root;
     final String imgAddr;
 
     public Quadtree(double ullon, double ullat, double lrlon, double lrlat, int maxDepth, String imgAddr) {
         this.imgAddr = imgAddr;
-        this.root = new Node(0, ullon, ullat, lrlon, lrlat, imgAddr, 0);
+        this.root = new Tile(0, ullon, ullat, lrlon, lrlat, imgAddr, 0);
         this.root = buildQuadtree(this.root, 0, maxDepth);
     }
 
     /**
      * Recursively constructs the Quadtree from the root node and depth provided, by adding 4 children
      * northwestern (index 1), northeastern (index 2), southwestern (index 3), and southeastern (index 4).
-     * @param x the starting Node
+     * @param x the starting Tile
      * @param depth the depth of the Quadtree
      * @return the root node of the Quadtree
      */
-    private Node buildQuadtree(Node x, int depth, int maxDepth) {
+    private Tile buildQuadtree(Tile x, int depth, int maxDepth) {
         if (depth == maxDepth) {
             return x;
         }
@@ -25,29 +25,29 @@ public class Quadtree {
         double midLon = (x.ullon + x.lrlon) / 2;
         double midLat = (x.ullat + x.lrlat) / 2;
         // add northwestern child
-        Node nwNode = new Node(x.index * 10 + 1, x.ullon, x.ullat, midLon, midLat, this.imgAddr,depth + 1);
-        x.nw = buildQuadtree(nwNode, depth + 1, maxDepth);
+        Tile nwTile = new Tile(x.index * 10 + 1, x.ullon, x.ullat, midLon, midLat, this.imgAddr,depth + 1);
+        x.nw = buildQuadtree(nwTile, depth + 1, maxDepth);
 
         // add northeastern child
-        Node neNode = new Node(x.index * 10 + 2, midLon, x.ullat, x.lrlon, midLat, this.imgAddr,depth + 1);
-        x.ne = buildQuadtree(neNode, depth + 1, maxDepth);
+        Tile neTile = new Tile(x.index * 10 + 2, midLon, x.ullat, x.lrlon, midLat, this.imgAddr,depth + 1);
+        x.ne = buildQuadtree(neTile, depth + 1, maxDepth);
 
         // add southwestern child
-        Node swNode = new Node(x.index * 10 + 3, x.ullon, midLat, midLon, x.lrlat, this.imgAddr,depth + 1);
-        x.sw = buildQuadtree(swNode, depth + 1, maxDepth);
+        Tile swTile = new Tile(x.index * 10 + 3, x.ullon, midLat, midLon, x.lrlat, this.imgAddr,depth + 1);
+        x.sw = buildQuadtree(swTile, depth + 1, maxDepth);
 
         // add southeastern child
-        Node seNode = new Node(x.index * 10 + 4, midLon, midLat, x.lrlon, x.lrlat, this.imgAddr,depth + 1);
-        x.se = buildQuadtree(seNode, depth + 1, maxDepth);
+        Tile seTile = new Tile(x.index * 10 + 4, midLon, midLat, x.lrlon, x.lrlat, this.imgAddr,depth + 1);
+        x.se = buildQuadtree(seTile, depth + 1, maxDepth);
 
         return x;
     }
 
-    public boolean intersectWithNode(double ullon, double ullat, double lrlon, double lrlat, Node x) {
+    public boolean intersectWithNode(double ullon, double ullat, double lrlon, double lrlat, Tile x) {
         return !((ullon > x.lrlon) || (ullat < x.lrlat) || (lrlon < x.ullon) || (lrlat > x.ullat));
     }
 
-    public boolean lonDPPLessThanQueryOrIsLeaf (Node x, double queryLonDPP) {
+    public boolean lonDPPLessThanQueryOrIsLeaf (Tile x, double queryLonDPP) {
         return (x.depth == 7 || x.lonDPP < queryLonDPP);
     }
 
@@ -57,7 +57,7 @@ public class Quadtree {
     }
 
     private void intersectionTiles(double qUllon, double qUllat, double qLrlon, double qLrlat, double qLonDPP,
-                                  Node x, Map<String, Object> results, Map<Double, List<String>> intersectTiles) {
+                                   Tile x, Map<String, Object> results, Map<Double, List<String>> intersectTiles) {
         if (x == null) {
             return;
         }
@@ -103,7 +103,7 @@ public class Quadtree {
      * Arrange the tiles that intersect with the query box by mapping the ullats of the tiles to their imgName.
      * The imgName of the tiles sharing the same ullat will be put into the same List.
      * @param ullat
-     * @param imgName the intersect Node's imgName
+     * @param imgName the intersect Tile's imgName
      * @param intersectTiles
      */
     private void arrangeTiles(double ullat, String imgName, Map<Double, List<String>> intersectTiles) {
@@ -133,7 +133,7 @@ public class Quadtree {
     public static void main(String[] args) {
         Quadtree qt = new Quadtree(MapServer.ROOT_ULLON, MapServer.ROOT_ULLAT, MapServer.ROOT_LRLON,
                 MapServer.ROOT_LRLAT, 7, "img/");
-        Node x = qt.root;
+        Tile x = qt.root;
         while (x.depth != 7) {
             x = x.ne;
         }
@@ -162,11 +162,6 @@ public class Quadtree {
             results.replace("query_success", true);
         }
 
-        //System.out.println(results.get("raster_ul_lon"));
-        //System.out.println(results.get("raster_ul_lat"));
-        System.out.println(results.get("raster_lr_lon"));
-        //System.out.println(results.get("raster_lr_lat"));
-
         String[][] a = (String[][]) results.get("render_grid");
         for (int i = 0; i < a.length; i++) {
             for (int j = 0; j < a[i].length; j++) {
@@ -177,7 +172,11 @@ public class Quadtree {
     }
 }
 
-class Node {
+/**
+ * A class represents a tile object. It contains all the information about the tile object. And four links
+ * to its northwestern, northeastern, southwestern, and southeastern children.
+ */
+class Tile {
     public static final int TILE_SIZE = 256;
     double ullon;
     double ullat;
@@ -187,10 +186,9 @@ class Node {
     String imgName;
     int index;
     int depth;
-    Node nw, ne, sw, se;
+    Tile nw, ne, sw, se;
 
-
-    public Node(int index, double ullon, double ullat, double lrlon, double lrlat, String imgDir, int depth) {
+    public Tile(int index, double ullon, double ullat, double lrlon, double lrlat, String imgDir, int depth) {
         if (index == 0) {
             this.imgName = imgDir + "root.png";
         } else {

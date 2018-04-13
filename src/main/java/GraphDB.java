@@ -9,7 +9,7 @@ import javax.xml.parsers.SAXParserFactory;
 import java.util.*;
 
 /**
- * Graph for storing all of the intersection (vertex) and road (edge) information.
+ * Graph for storing all of the intersection (node) and road (edge) information.
  * Uses your GraphBuildingHandler to convert the XML files into a graph. Your
  * code must include the vertices, adjacent, distance, closest, lat, and lon
  * methods. You'll also need to include instance variables and methods for
@@ -18,8 +18,8 @@ import java.util.*;
  * @author Alan Yao, Josh Hug
  */
 public class GraphDB {
-    /** map vertex id to list of itself as the first item and its adj vertices */
-    private Map<Long, List<Vertex>> adj = new HashMap<>();
+    /** map node id to list of itself as the first item and its adj vertices */
+    private Map<Long, List<Node>> adj = new HashMap<>();
     /** a 256-way trie structure to represents a symbol table for implementing an autocomplete system
      * where a user types in a partial query string, and return a list of location names that have the
      * query string as a prefix.
@@ -59,13 +59,13 @@ public class GraphDB {
      */
     private void clean() {
         for (Long v : vertices()) {
-            if (adj.get(v).size() <= 1) {
+            if (adj.get(v).size() == 1) {
                 adj.remove(v);
             }
         }
     }
 
-    /** Returns an iterable of all vertex IDs in the graph. */
+    /** Returns an iterable of all node IDs in the graph. */
     Iterable<Long> vertices() {
         List<Long> vertices = new ArrayList<>();
         vertices.addAll(adj.keySet());
@@ -77,13 +77,13 @@ public class GraphDB {
         if (!adj.containsKey(v)) {
             return null;
         }
-        List<Long> vertexAdj = new ArrayList<>();
-        List<Vertex> vList = adj.get(v);
+        List<Long> nodeAdj = new ArrayList<>();
+        List<Node> vList = adj.get(v);
         int vListSize = vList.size();
         for (int i = 1; i < vListSize; i++) {
-            vertexAdj.add(vList.get(i).id);
+            nodeAdj.add(vList.get(i).id);
         }
-        return vertexAdj;
+        return nodeAdj;
     }
 
     /** Returns the Euclidean distance between vertices v and w, where Euclidean distance
@@ -94,7 +94,7 @@ public class GraphDB {
         return Math.sqrt(deltaLon * deltaLon + deltaLat * deltaLat);
     }
 
-    /** Returns the vertex id closest to the given longitude and latitude. */
+    /** Returns the node id closest to the given longitude and latitude. */
     long closest(double lon, double lat) {
         double minDist = Double.MAX_VALUE;
         long closestVID = 0;
@@ -110,55 +110,97 @@ public class GraphDB {
         return closestVID;
     }
 
-    /** Longitude of vertex v. */
+    /** Longitude of node v. */
     double lon(long v) {
         return adj.get(v).get(0).lon;
     }
 
-    /** Latitude of vertex v. */
+    /** Latitude of node v. */
     double lat(long v) {
         return adj.get(v).get(0).lat;
     }
 
-    void addVertex(Vertex v) {
+    void addNode(Node v) {
         if (adj.containsKey(v.id)) {
             return;
         }
-        List<Vertex> vertexList = new ArrayList<>();
-        vertexList.add(v);
-        adj.put(v.id, vertexList);
+        List<Node> nodeList = new ArrayList<>();
+        nodeList.add(v);
+        adj.put(v.id, nodeList);
     }
 
-    Vertex getVertex(long v) {
+    Node getNode(long v) {
         return adj.get(v).get(0);
     }
 
     private void addEdge(long v, long w) {
-        adj.get(v).add(new Vertex(w, lon(w), lat(w)));
-        adj.get(w).add(new Vertex(v, lon(v), lat(v)));
+        adj.get(v).add(new Node(w, lon(w), lat(w)));
+        adj.get(w).add(new Node(v, lon(v), lat(v)));
     }
 
+    /**
+     * Add all edges along the way in this graph
+     * @param way a list of
+     */
     void addEdges(List<Long> way) {
         for (int i = 0; i < way.size() - 1; i++) {
             addEdge(way.get(i), way.get(i + 1));
         }
     }
 
-    public void putLocNameToTrie(String searchName, String locationName, long nodeID) {
-        trie.put(searchName, locationName, nodeID);
+    /**
+     * Inserts a key (searchName) with locationName and corresponding node into the trie
+     * @param searchName cleaned location name, lowercase
+     * @param locationName actual location Name from xml file
+     * @param node a node object
+     */
+    public void putLocNameToTrie(String searchName, String locationName, Node node) {
+        trie.put(searchName, locationName, node);
     }
 
+    /**
+     * Return a list of valid location names that associated with vertices according to the given prefix.
+     * @param prefix
+     * @return a list of valid location names
+     */
     public List<String> getLocationsByPrefix(String prefix) {
         return trie.keysWithPrefix(cleanString(prefix));
     }
 
-    static class Vertex implements Comparable<Vertex> {
+    /**
+     * Returns a list of Map objects if the given locationName exists, otherwise an empty list.
+     * Each Map object contains the information of the node whose cleaned name is the same as cleaned
+     * locationName.
+     * @param locationName
+     * @return a list of Map objects or an empty list
+     */
+    public List<Map<String, Object>> getLocationsByName(String locationName) {
+        List<Map<String, Object>> res = new LinkedList<>();
+        List<Node> vertices = trie.get(cleanString(locationName));
+
+        for (Node v : vertices) {
+            Map<String, Object> map = new HashMap<>();
+            map.put("id", v.id);
+            map.put("lon", v.lon);
+            map.put("lat", v.lat);
+            map.put("name", v.name);
+            res.add(map);
+        }
+        return res;
+    }
+
+    /**
+     * Represents a node object in the graph, which is comparable by its priority.
+     * Each node object has an id, a location represents by latitude and longitude. The name and priority
+     * can be optional and can be set using setName and setPriority methods.
+     */
+    static class Node implements Comparable<Node> {
         long id;
         double lat, lon;
         String name;
         double priority;
 
-        Vertex(long id, double lon, double lat) {
+        Node(long id, double lon, double lat) {
             this.id = id;
             this.lon = lon;
             this.lat = lat;
@@ -175,7 +217,7 @@ public class GraphDB {
         @Override
         public String toString() {
             StringBuilder s = new StringBuilder();
-            s.append("Node id: " + id + ", " + "lat: " + lat + ", " + "lon: " + lon);
+            s.append("Tile id: " + id + ", " + "lat: " + lat + ", " + "lon: " + lon);
             if (name != null) {
                 s.append(", name: " + name + "\n");
             }
@@ -183,7 +225,7 @@ public class GraphDB {
         }
 
         @Override
-        public int compareTo(Vertex o) {
+        public int compareTo(Node o) {
             return Double.compare(this.priority, o.priority);
         }
     }

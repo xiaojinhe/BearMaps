@@ -35,6 +35,8 @@ public class AGAutocompleteTest extends AGMapTest {
         for (TestParameters p : params) {
             List<Map<String, Object>> studentSearchResult =
                     MapServer.getLocations(p.actualSearchParam);
+            //System.out.println(p.actualSearchResult);
+            System.out.println(studentSearchResult);
             assertEquals("Search results differ for search term: " + p.actualSearchParam,
                     p.actualSearchResult, studentSearchResult);
         }

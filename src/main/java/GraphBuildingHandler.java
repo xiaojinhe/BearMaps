@@ -38,11 +38,11 @@ public class GraphBuildingHandler extends DefaultHandler {
     private final GraphDB g;
     private boolean validWay;
     private List<Long> way;
-    private GraphDB.Vertex lastVertex;
+    private GraphDB.Node lastNode;
 
     public GraphBuildingHandler(GraphDB g) {
         this.g = g;
-        this.lastVertex = null;
+        this.lastNode = null;
     }
 
     /**
@@ -66,22 +66,22 @@ public class GraphBuildingHandler extends DefaultHandler {
         if (qName.equals("node")) {
             /* We encountered a new <node...> tag. */
             activeState = "node";
-            //System.out.println("Node id: " + attributes.getValue("id"));
-            //System.out.println("Node lon: " + attributes.getValue("lon"));
-            //System.out.println("Node lat: " + attributes.getValue("lat"));
-            GraphDB.Vertex vertex = new GraphDB.Vertex(Long.parseLong(attributes.getValue("id")),
+            //System.out.println("Tile id: " + attributes.getValue("id"));
+            //System.out.println("Tile lon: " + attributes.getValue("lon"));
+            //System.out.println("Tile lat: " + attributes.getValue("lat"));
+            GraphDB.Node node = new GraphDB.Node(Long.parseLong(attributes.getValue("id")),
                                                        Double.parseDouble(attributes.getValue("lon")),
                                                        Double.parseDouble(attributes.getValue("lat")));
 
-            g.addVertex(vertex);
-            lastVertex = vertex;
+            g.addNode(node);
+            lastNode = node;
 
         } else if (qName.equals("way")) {
             /* We encountered a new <way...> tag. */
             activeState = "way";
             //System.out.println("Beginning a way...");
             way = new ArrayList<>();
-            lastVertex = null;
+            lastNode = null;
         } else if (activeState.equals("way") && qName.equals("nd")) {
             /* While looking at a way, we found a <nd...> tag. */
             //System.out.println("Id of a node in this way: " + attributes.getValue("ref"));
@@ -110,9 +110,9 @@ public class GraphBuildingHandler extends DefaultHandler {
         } else if (activeState.equals("node") && qName.equals("tag") && attributes.getValue("k")
                 .equals("name")) {
             /* While looking at a node, we found a <tag...> with k="name". */
-            lastVertex.setName(attributes.getValue("v"));
-            g.putLocNameToTrie(GraphDB.cleanString(lastVertex.name), lastVertex.name, lastVertex.id);
-            //System.out.println("Node's name: " + lastVertex.name);
+            lastNode.setName(attributes.getValue("v"));
+            g.putLocNameToTrie(GraphDB.cleanString(lastNode.name), lastNode.name, lastNode);
+            //System.out.println("Tile's name: " + lastNode.name);
         }
     }
 
