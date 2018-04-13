@@ -110,8 +110,9 @@ public class GraphBuildingHandler extends DefaultHandler {
         } else if (activeState.equals("node") && qName.equals("tag") && attributes.getValue("k")
                 .equals("name")) {
             /* While looking at a node, we found a <tag...> with k="name". */
-            lastVertex.setName(GraphDB.cleanString(attributes.getValue("v")));
-            //System.out.println("Node's name: " + attributes.getValue("v"));
+            lastVertex.setName(attributes.getValue("v"));
+            g.putLocNameToTrie(GraphDB.cleanString(lastVertex.name), lastVertex.name, lastVertex.id);
+            //System.out.println("Node's name: " + lastVertex.name);
         }
     }
 

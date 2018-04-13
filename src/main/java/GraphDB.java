@@ -1,4 +1,4 @@
-import com.sun.imageio.plugins.common.LZWStringTable;
+
 import org.xml.sax.SAXException;
 
 import java.io.File;
@@ -18,12 +18,13 @@ import java.util.*;
  * @author Alan Yao, Josh Hug
  */
 public class GraphDB {
-    /** Your instance variables for storing the graph. You should consider
-     * creating helper classes, e.g. Node, Edge, etc. */
-
     /** map vertex id to list of itself as the first item and its adj vertices */
     private Map<Long, List<Vertex>> adj = new HashMap<>();
-
+    /** a 256-way trie structure to represents a symbol table for implementing an autocomplete system
+     * where a user types in a partial query string, and return a list of location names that have the
+     * query string as a prefix.
+     */
+    private TrieST trie = new TrieST();
     /**
      * Example constructor shows how to create and start an XML parser.
      * You do not need to modify this constructor, but you're welcome to do so.
@@ -141,6 +142,14 @@ public class GraphDB {
         for (int i = 0; i < way.size() - 1; i++) {
             addEdge(way.get(i), way.get(i + 1));
         }
+    }
+
+    public void putLocNameToTrie(String searchName, String locationName, long nodeID) {
+        trie.put(searchName, locationName, nodeID);
+    }
+
+    public List<String> getLocationsByPrefix(String prefix) {
+        return trie.keysWithPrefix(cleanString(prefix));
     }
 
     static class Vertex implements Comparable<Vertex> {

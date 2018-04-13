@@ -18,7 +18,7 @@ public class AGAutocompleteTest extends AGMapTest {
                     MapServer.getLocationsByPrefix(p.prefixSearchParam);
             LinkedHashSet<String> studentSet = new LinkedHashSet<>(studentAutocompleteResult);
             LinkedHashSet<String> solutionSet = new LinkedHashSet<>(p.autocompleteResults);
-
+            System.out.println(studentSet.size() + ", " + solutionSet.size());
             assertEquals("Autocompletion results differ for prefix " + p.prefixSearchParam,
                     solutionSet, studentSet);
         }
